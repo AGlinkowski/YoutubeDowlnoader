@@ -1,5 +1,6 @@
 from genericpath import exists
 from pytube import Playlist, cli
+from pytube import YouTube
 from moviepy.editor import *
 import os
 import sys
@@ -26,49 +27,64 @@ def DownloadAudios(aud, _elementTitle, savePath):
     print("Pobrano: " + _elementTitle) #Wypisanie pobranego elementu
 
 #==========Początek programu============
-
-url = input("Podaj ścieżkę do playlisty: ")
-type = input("Co chcesz pobrać? v - video; a - audio: ")
-if (not type in {"a", "v"}):
-    sys.exit("wybrano zły typ")
+choice = input("Chcesz pobrać 1 (o) czy wiele (w) elementów? ")
+if (choice == "o"):
+    linkYT = input("Podaj link do pobrania: ")
+    objYT = YouTube(linkYT)
+    for tag in objYT.streams:
+        print(tag)
+    itag = input("Podaj itag który chcesz pobrać: ")
+    data = objYT.streams.get_by_itag(int(itag))
+    #format = data.mime_type.split("/")[1]
     
+    path = os.path.join(os.path.expanduser('~'), 'downloads\\')
+    
+    objYT.register_on_progress_callback(cli.on_progress) #Rejestracja callback wyświetlającego progress bar
+    data.download(path)
 
-playListElements = Playlist(url)
-playListName = playListElements.title
-playListCount = len(playListElements.video_urls)
-
-print("Pobieram playlistę " +  playListName + " (" + str(playListCount) + " utworów)")
-
-#Pobranie listy elementów w docelowej ścieżce
-path = os.path.join(os.path.expanduser('~'), 'downloads\\' + playListName)
-if os.path.exists(path):
-    actualElements = os.listdir(path)
 else:
-    actualElements = []
+    url = input("Podaj ścieżkę do playlisty: ")
+    type = input("Co chcesz pobrać? v - video; a - audio: ")
+    if (not type in {"a", "v"}):
+        sys.exit("wybrano zły typ")
+        
 
-#Pętla pobierania elementów playlisty
-it = 0
-for video in playListElements.videos:
-    it += 1
-    elementTitle = video.title
-    print("Pobieram: " + str(it) + " z " + str(playListCount) + ": \"" + elementTitle + "\"")
-    
-    #Sprawdzenie czy dany element jest już pobrany
-    elementExist = 0
-    for s in actualElements:
-        if (s[:-4] == elementTitle):
-            if (type == "a" and s[-3:] == "mp3"): #Interesują nas tylko pliki audio w formacie mp3
-                elementExist = 1
-                break
-            else:
-                elementExist = 1
-                break
-    
-    if (elementExist == 1):
-        print("Element istnieje")
-    elif (type == "v"):
-        DownloadVideos(video, elementTitle, path)
+    playListElements = Playlist(url)
+    playListName = playListElements.title
+    playListCount = len(playListElements.video_urls)
+
+    print("Pobieram playlistę " +  playListName + " (" + str(playListCount) + " utworów)")
+
+    #Pobranie listy elementów w docelowej ścieżce
+    path = os.path.join(os.path.expanduser('~'), 'downloads\\' + playListName)
+    if os.path.exists(path):
+        actualElements = os.listdir(path)
     else:
-        DownloadAudios(video, elementTitle, path)
+        actualElements = []
 
-    
+    #Pętla pobierania elementów playlisty
+    it = 0
+    for video in playListElements.videos:
+        it += 1
+        elementTitle = video.title
+        print("Pobieram: " + str(it) + " z " + str(playListCount) + ": \"" + elementTitle + "\"")
+        
+        #Sprawdzenie czy dany element jest już pobrany
+        elementExist = 0
+        for s in actualElements:
+            if (s[:-4] == elementTitle):
+                if (type == "a" and s[-3:] == "mp3"): #Interesują nas tylko pliki audio w formacie mp3
+                    elementExist = 1
+                    break
+                else:
+                    elementExist = 1
+                    break
+        
+        if (elementExist == 1):
+            print("Element istnieje")
+        elif (type == "v"):
+            DownloadVideos(video, elementTitle, path)
+        else:
+            DownloadAudios(video, elementTitle, path)
+
+        
